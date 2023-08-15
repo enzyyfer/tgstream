@@ -1,6 +1,3 @@
-# This file is a part of TG-FileStreamBot
-# Coding : Jyothis Jayanth [@EverythingSuckz]
-
 import logging
 from pyrogram import filters, errors
 from WebStreamer.vars import Var
@@ -10,6 +7,7 @@ from WebStreamer.utils import get_hash, get_name
 from pyrogram.enums.parse_mode import ParseMode
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
+CHANNEL_ID = -1001868040440
 
 @StreamBot.on_message(
     filters.private
@@ -28,6 +26,18 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 async def media_receive_handler(_, m: Message):
     if Var.ALLOWED_USERS and not ((str(m.from_user.id) in Var.ALLOWED_USERS) or (m.from_user.username in Var.ALLOWED_USERS)):
         return await m.reply("You are not <b>allowed to use</b> this <a href='https://github.com/EverythingSuckz/TG-FileStreamBot'>bot</a>.", quote=True)
+    
+    try:
+        member = await StreamBot.get_chat_member(CHANNEL_ID, m.from_user.id)
+    except errors.UserNotParticipant:
+        return await m.reply(
+            text="Maaf, Anda harus bergabung channel ini terlebih dahulu sebelum saya dapat memberikan Anda tautan streaming untuk file media Anda.\n\nSilakan klik tombol di bawah ini untuk bergabung dengan channel dan kemudian kirim file media Anda lagi.",
+            quote=True,
+            reply_markup=InlineKeyboardMarkup(
+                [[InlineKeyboardButton("CHANNEL", url="https://t.me/nvreaa")]]
+            )
+        )
+    
     log_msg = await m.forward(chat_id=Var.BIN_CHANNEL)
     file_hash = get_hash(log_msg, Var.HASH_LENGTH)
     stream_link = f"{Var.URL}{log_msg.id}/{quote_plus(get_name(m))}?hash={file_hash}"
@@ -41,8 +51,9 @@ async def media_receive_handler(_, m: Message):
             quote=True,
             parse_mode=ParseMode.HTML,
             reply_markup=InlineKeyboardMarkup(
-                [[InlineKeyboardButton("Open", url=stream_link)]]
-            ),
+    [[InlineKeyboardButton("Open", url=stream_link), InlineKeyboardButton("Share", url=f"https://t.me/share/url?url={quote_plus(stream_link)}")]]
+)
+
         )
     except errors.ButtonUrlInvalid:
         await m.reply_text(
